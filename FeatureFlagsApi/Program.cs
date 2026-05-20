@@ -5,6 +5,8 @@ var app = builder.Build();
 
 app.MapHealthEndpoints();
 app.MapUserEndpoints();
+app.MapGroupEndpoints();
+
 
 app.Run();
 
