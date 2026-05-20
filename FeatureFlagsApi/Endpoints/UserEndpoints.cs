@@ -1,0 +1,49 @@
+﻿using FeatureFlagsApi.Models;
+using FeatureFlagsApi.Services;
+
+namespace FeatureFlagsApi.Endpoints;
+
+public static class UserEndpoints
+{
+    public static void MapUserEndpoints(this WebApplication app)
+    {
+        app.MapGet("/api/users", () =>
+            Results.Ok(UserStore.Users));
+
+        app.MapGet("/api/users/{id}", (int id) =>
+        {
+            var user = UserStore.Users.FirstOrDefault(u => u.Id == id);
+            return user is null ? Results.NotFound() : Results.Ok(user);
+        });
+
+        app.MapPost("/api/users", (User user) =>
+        {
+            if (UserStore.Users.Any(u => u.Email == user.Email))
+                return Results.Conflict("Un utilisateur avec cet email existe déjà.");
+
+            user.Id = UserStore.NextId();
+            UserStore.Users.Add(user);
+            return Results.Created($"/api/users/{user.Id}", user);
+        });
+
+        app.MapPatch("/api/users/{id}", (int id, User updated) =>
+        {
+            var user = UserStore.Users.FirstOrDefault(u => u.Id == id);
+            if (user is null) return Results.NotFound();
+
+            user.Name = updated.Name ?? user.Name;
+            user.Email = updated.Email ?? user.Email;
+            user.Role = updated.Role ?? user.Role;
+            return Results.Ok(user);
+        });
+
+        app.MapDelete("/api/users/{id}", (int id) =>
+        {
+            var user = UserStore.Users.FirstOrDefault(u => u.Id == id);
+            if (user is null) return Results.NotFound();
+
+            UserStore.Users.Remove(user);
+            return Results.NoContent();
+        });
+    }
+}
