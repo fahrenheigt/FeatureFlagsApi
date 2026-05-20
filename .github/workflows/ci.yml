@@ -1,0 +1,52 @@
+name: CI/CD Feature Flags API
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Test
+        run: dotnet test --no-build -c Release
+
+  deploy:
+    name: Deploy to Scaleway
+    runs-on: ubuntu-24.04
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Scaleway Registry
+        run: |
+          docker login ${{ secrets.SCW_REGISTRY }} \
+            -u nologin \
+            --password-stdin <<< "${{ secrets.SCW_SECRET_KEY }}"
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_CONTAINER_NAME }}:${{ github.ref_name }} .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_CONTAINER_NAME }}:${{ github.ref_name }}
