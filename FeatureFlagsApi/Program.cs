@@ -7,6 +7,8 @@ app.MapHealthEndpoints();
 app.MapUserEndpoints();
 app.MapGroupEndpoints();
 app.MapEnvironmentEndpoints();
+app.MapFeatureEndpoints();
+
 
 
 
