@@ -10,7 +10,10 @@ public static class ValidationHelper
         var results = new List<ValidationResult>();
         var isValid = Validator.TryValidateObject(model, context, results, true);
 
-        var errors = results.Select(r => r.ErrorMessage ?? "Erreur de validation").ToList();
+        var errors = results
+            .Where(r => r.ErrorMessage != null)
+            .Select(r => r.ErrorMessage!)
+            .ToList();
         return (isValid, errors);
     }
 }

@@ -230,4 +230,17 @@ public class FeatureTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.PutAsJsonAsync("/api/features/rollout-422/environments/prod/config", config);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateFeature_KeepsExistingDescription_WhenNotChanged()
+    {
+        var feature = new Feature { Key = "keep-desc-feature", Name = "Original", Description = "Original desc" };
+        await _client.PostAsJsonAsync("/api/features", feature);
+
+        var updated = new Feature { Key = "keep-desc-feature", Name = "Updated", Description = "Original desc" };
+        var response = await _client.PatchAsJsonAsync("/api/features/keep-desc-feature", updated);
+        var result = await response.Content.ReadFromJsonAsync<Feature>();
+
+        Assert.Equal("Original desc", result!.Description);
+    }
 }

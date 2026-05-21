@@ -8,87 +8,95 @@ public static class GroupEndpoints
 {
     public static void MapGroupEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/groups", () =>
-            Results.Ok(GroupStore.Groups));
+        app.MapGet("/api/groups", GetAllGroups);
+        app.MapGet("/api/groups/{id}", GetGroup);
+        app.MapPost("/api/groups", CreateGroup);
+        app.MapPatch("/api/groups/{id}", UpdateGroup);
+        app.MapDelete("/api/groups/{id}", DeleteGroup);
+        app.MapPost("/api/groups/{id}/users/{userId}", AddUserToGroup);
+        app.MapDelete("/api/groups/{id}/users/{userId}", RemoveUserFromGroup);
+        app.MapGet("/api/groups/{id}/users", GetGroupUsers);
+    }
 
-        app.MapGet("/api/groups/{id}", (int id) =>
-        {
-            var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
-            return group is null ? Results.NotFound() : Results.Ok(group);
-        });
+    private static IResult GetAllGroups() =>
+        Results.Ok(GroupStore.Groups);
 
-        app.MapPost("/api/groups", (Group group) =>
-        {
-            var (isValid, errors) = ValidationHelper.Validate(group);
-            if (!isValid) return Results.UnprocessableEntity(errors);
+    private static IResult GetGroup(int id)
+    {
+        var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
+        return group is null ? Results.NotFound() : Results.Ok(group);
+    }
 
-            if (GroupStore.Groups.Any(g => g.Name == group.Name))
-                return Results.Conflict("Un groupe avec ce nom existe déjà.");
+    private static IResult CreateGroup(Group group)
+    {
+        var (isValid, errors) = ValidationHelper.Validate(group);
+        if (!isValid) return Results.UnprocessableEntity(errors);
 
-            group.Id = GroupStore.NextId();
-            GroupStore.Groups.Add(group);
-            return Results.Created($"/api/groups/{group.Id}", group);
-        });
+        if (GroupStore.Groups.Any(g => g.Name == group.Name))
+            return Results.Conflict("Un groupe avec ce nom existe déjà.");
 
-        app.MapPatch("/api/groups/{id}", (int id, Group updated) =>
-        {
-            var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
-            if (group is null) return Results.NotFound();
+        group.Id = GroupStore.NextId();
+        GroupStore.Groups.Add(group);
+        return Results.Created($"/api/groups/{group.Id}", group);
+    }
 
-            var (isValid, errors) = ValidationHelper.Validate(updated);
-            if (!isValid) return Results.UnprocessableEntity(errors);
+    private static IResult UpdateGroup(int id, Group updated)
+    {
+        var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
+        if (group is null) return Results.NotFound();
 
-            group.Name = updated.Name ?? group.Name;
-            group.Description = updated.Description ?? group.Description;
-            return Results.Ok(group);
-        });
+        var (isValid, errors) = ValidationHelper.Validate(updated);
+        if (!isValid) return Results.UnprocessableEntity(errors);
 
-        app.MapDelete("/api/groups/{id}", (int id) =>
-        {
-            var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
-            if (group is null) return Results.NotFound();
+        group.Name = updated.Name;
+        group.Description = updated.Description;
+        return Results.Ok(group);
+    }
 
-            GroupStore.Groups.Remove(group);
-            AuditStore.Log("group-deleted", "group", group.Name, $"groupId={id}");
-            return Results.NoContent();
-        });
+    private static IResult DeleteGroup(int id)
+    {
+        var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
+        if (group is null) return Results.NotFound();
 
-        app.MapPost("/api/groups/{id}/users/{userId}", (int id, int userId) =>
-        {
-            var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
-            if (group is null) return Results.NotFound("Groupe introuvable.");
+        GroupStore.Groups.Remove(group);
+        return Results.NoContent();
+    }
 
-            var user = UserStore.Users.FirstOrDefault(u => u.Id == userId);
-            if (user is null) return Results.NotFound("Utilisateur introuvable.");
+    private static IResult AddUserToGroup(int id, int userId)
+    {
+        var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
+        if (group is null) return Results.NotFound("Groupe introuvable.");
 
-            if (group.UserIds.Contains(userId))
-                return Results.Conflict("L'utilisateur est déjà dans ce groupe.");
+        var user = UserStore.Users.FirstOrDefault(u => u.Id == userId);
+        if (user is null) return Results.NotFound("Utilisateur introuvable.");
 
-            group.UserIds.Add(userId);
-            AuditStore.Log("user-added", "group", group.Name, $"userId={userId}");
-            return Results.Ok(group);
-        });
+        if (group.UserIds.Contains(userId))
+            return Results.Conflict("L'utilisateur est déjà dans ce groupe.");
 
-        app.MapDelete("/api/groups/{id}/users/{userId}", (int id, int userId) =>
-        {
-            var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
-            if (group is null) return Results.NotFound("Groupe introuvable.");
+        group.UserIds.Add(userId);
+        AuditStore.Log("user-added", "group", group.Name, $"userId={userId}");
+        return Results.Ok(group);
+    }
 
-            if (!group.UserIds.Contains(userId))
-                return Results.NotFound("Utilisateur introuvable dans ce groupe.");
+    private static IResult RemoveUserFromGroup(int id, int userId)
+    {
+        var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
+        if (group is null) return Results.NotFound("Groupe introuvable.");
 
-            group.UserIds.Remove(userId);
-            AuditStore.Log("user-removed", "group", group.Name, $"userId={userId}");
-            return Results.NoContent();
-        });
+        if (!group.UserIds.Contains(userId))
+            return Results.NotFound("Utilisateur introuvable dans ce groupe.");
 
-        app.MapGet("/api/groups/{id}/users", (int id) =>
-        {
-            var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
-            if (group is null) return Results.NotFound();
+        group.UserIds.Remove(userId);
+        AuditStore.Log("user-removed", "group", group.Name, $"userId={userId}");
+        return Results.NoContent();
+    }
 
-            var users = UserStore.Users.Where(u => group.UserIds.Contains(u.Id));
-            return Results.Ok(users);
-        });
+    private static IResult GetGroupUsers(int id)
+    {
+        var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
+        if (group is null) return Results.NotFound();
+
+        var users = UserStore.Users.Where(u => group.UserIds.Contains(u.Id));
+        return Results.Ok(users);
     }
 }

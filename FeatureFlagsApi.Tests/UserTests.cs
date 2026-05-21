@@ -148,4 +148,19 @@ public class UserTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.PatchAsJsonAsync($"/api/users/{created!.Id}", updated);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateUser_KeepsExistingName_WhenNotChanged()
+    {
+        var user = new User { Email = "keepname@example.com", Name = "Original", Role = "user" };
+        var created = await (await _client.PostAsJsonAsync("/api/users", user))
+            .Content.ReadFromJsonAsync<User>();
+
+        var updated = new User { Email = "keepname@example.com", Name = "Original", Role = "admin" };
+        var response = await _client.PatchAsJsonAsync($"/api/users/{created!.Id}", updated);
+        var result = await response.Content.ReadFromJsonAsync<User>();
+
+        Assert.Equal("Original", result!.Name);
+        Assert.Equal("admin", result.Role);
+    }
 }
