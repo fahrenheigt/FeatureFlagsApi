@@ -1,5 +1,16 @@
+# .NET
 bin/
 obj/
 *.user
 .vs/
+
+# Coverage
+**/TestResults/
+coverage-report/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env
 *.env
