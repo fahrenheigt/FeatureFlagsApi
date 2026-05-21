@@ -67,7 +67,9 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_CONTAINER_NAME }}:${{ github.ref_name }} .
+          docker build \
+            --build-arg APP_VERSION=${{ github.ref_name }} \
+            -t ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_CONTAINER_NAME }}:${{ github.ref_name }} .
 
       - name: Push Docker image
         run: |

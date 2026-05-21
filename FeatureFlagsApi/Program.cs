@@ -7,8 +7,9 @@ builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, context, token) =>
     {
+        var version = Environment.GetEnvironmentVariable("APP_VERSION") ?? "dev";
         document.Info.Title = "Feature Flags API";
-        document.Info.Version = "0.7.7";
+        document.Info.Version = version;
         document.Info.Description = "API de gestion de feature flags";
         return Task.CompletedTask;
     });
