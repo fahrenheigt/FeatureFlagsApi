@@ -1,18 +1,29 @@
 using FeatureFlagsApi.Endpoints;
-using System.ComponentModel.DataAnnotations;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, token) =>
+    {
+        document.Info.Title = "Feature Flags API";
+        document.Info.Version = "0.7.7";
+        document.Info.Description = "API de gestion de feature flags";
+        return Task.CompletedTask;
+    });
+});
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
 
-app.Use(async (context, next) =>
+if (app.Environment.IsDevelopment())
 {
-    await next();
-});
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.MapHealthEndpoints();
 app.MapUserEndpoints();
