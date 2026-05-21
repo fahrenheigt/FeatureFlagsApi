@@ -94,5 +94,25 @@ public static class FeatureEndpoints
             feature.Environments.Remove(env);
             return Results.NoContent();
         });
+
+        app.MapGet("/api/features/{key}/evaluate", (string key, int userId, string env) =>
+        {
+            var feature = FeatureStore.Features.FirstOrDefault(f => f.Key == key);
+            if (feature is null) return Results.NotFound("Feature introuvable.");
+
+            if (!feature.Environments.TryGetValue(env, out var config))
+                return Results.NotFound("Environnement introuvable.");
+
+            var user = UserStore.Users.FirstOrDefault(u => u.Id == userId);
+            if (user is null) return Results.NotFound("Utilisateur introuvable.");
+
+            var userGroups = GroupStore.Groups
+                .Where(g => g.UserIds.Contains(userId))
+                .Select(g => g.Name)
+                .ToList();
+
+            var result = FeatureService.EvaluateFeatureAccess(feature, config, user, userGroups);
+            return Results.Ok(result);
+        });
     }
 }
