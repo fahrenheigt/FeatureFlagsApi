@@ -19,6 +19,9 @@ public static class EnvironmentEndpoints
 
         app.MapPost("/api/environments", (FeatureEnvironment env) =>
         {
+            var (isValid, errors) = ValidationHelper.Validate(env);
+            if (!isValid) return Results.UnprocessableEntity(errors);
+
             if (EnvironmentStore.Environments.Any(e => e.Name == env.Name))
                 return Results.Conflict("Un environnement avec ce nom existe déjà.");
 
@@ -30,6 +33,9 @@ public static class EnvironmentEndpoints
         {
             var env = EnvironmentStore.Environments.FirstOrDefault(e => e.Name == name);
             if (env is null) return Results.NotFound();
+
+            var (isValid, errors) = ValidationHelper.Validate(updated);
+            if (!isValid) return Results.UnprocessableEntity(errors);
 
             env.Description = updated.Description ?? env.Description;
             return Results.Ok(env);

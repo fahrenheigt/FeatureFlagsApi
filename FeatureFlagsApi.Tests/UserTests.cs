@@ -1,44 +1,151 @@
 ﻿using System.Net;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using FeatureFlagsApi.Models;
 
 namespace FeatureFlagsApi.Tests;
 
-public class HealthTests : IClassFixture<WebApplicationFactory<Program>>
+public class UserTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
 
-    public HealthTests(WebApplicationFactory<Program> factory)
+    public UserTests(WebApplicationFactory<Program> factory)
     {
         _client = factory.CreateClient();
     }
 
     [Fact]
-    public async Task GetHealth_Returns200()
+    public async Task CreateUser_Returns201()
     {
-        var response = await _client.GetAsync("/api/health");
+        var user = new User { Email = "alice@example.com", Name = "Alice", Role = "user" };
+        var response = await _client.PostAsJsonAsync("/api/users", user);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetUsers_Returns200()
+    {
+        var response = await _client.GetAsync("/api/users");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetVersion_Returns200()
+    public async Task GetUser_Returns200()
     {
-        var response = await _client.GetAsync("/api/version");
+        var user = new User { Email = "getuser@example.com", Name = "GetUser", Role = "user" };
+        var created = await (await _client.PostAsJsonAsync("/api/users", user))
+            .Content.ReadFromJsonAsync<User>();
+        var response = await _client.GetAsync($"/api/users/{created!.Id}");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetHealth_ReturnsStatusOk()
+    public async Task GetUser_NotFound_Returns404()
     {
-        var response = await _client.GetAsync("/api/health");
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("ok", content);
+        var response = await _client.GetAsync("/api/users/9999");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetVersion_ReturnsVersion()
+    public async Task CreateUser_Duplicate_Returns409()
     {
-        var response = await _client.GetAsync("/api/version");
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("1.0.0", content);
+        var user = new User { Email = "bob@example.com", Name = "Bob", Role = "user" };
+        await _client.PostAsJsonAsync("/api/users", user);
+        var response = await _client.PostAsJsonAsync("/api/users", user);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateUser_Returns200()
+    {
+        var user = new User { Email = "charlie@example.com", Name = "Charlie", Role = "user" };
+        var created = await (await _client.PostAsJsonAsync("/api/users", user))
+            .Content.ReadFromJsonAsync<User>();
+        var updated = new User { Name = "Charlie Updated", Email = "charlie@example.com", Role = "user" };
+        var response = await _client.PatchAsJsonAsync($"/api/users/{created!.Id}", updated);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateUser_NotFound_Returns404()
+    {
+        var user = new User { Email = "x@x.com", Name = "X", Role = "user" };
+        var response = await _client.PatchAsJsonAsync("/api/users/9999", user);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateUser_ReturnsUpdatedName()
+    {
+        var user = new User { Email = "update-name@example.com", Name = "Original", Role = "user" };
+        var created = await (await _client.PostAsJsonAsync("/api/users", user))
+            .Content.ReadFromJsonAsync<User>();
+        var updated = new User { Name = "Updated", Email = "update-name@example.com", Role = "user" };
+        var response = await _client.PatchAsJsonAsync($"/api/users/{created!.Id}", updated);
+        var result = await response.Content.ReadFromJsonAsync<User>();
+        Assert.Equal("Updated", result!.Name);
+    }
+
+    [Fact]
+    public async Task DeleteUser_Returns204()
+    {
+        var user = new User { Email = "dave@example.com", Name = "Dave", Role = "user" };
+        var created = await (await _client.PostAsJsonAsync("/api/users", user))
+            .Content.ReadFromJsonAsync<User>();
+        var response = await _client.DeleteAsync($"/api/users/{created!.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteUser_NotFound_Returns404()
+    {
+        var response = await _client.DeleteAsync("/api/users/9999");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteUser_ThenGet_Returns404()
+    {
+        var user = new User { Email = "deleted@example.com", Name = "Deleted", Role = "user" };
+        var created = await (await _client.PostAsJsonAsync("/api/users", user))
+            .Content.ReadFromJsonAsync<User>();
+        await _client.DeleteAsync($"/api/users/{created!.Id}");
+        var response = await _client.GetAsync($"/api/users/{created!.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateUser_InvalidEmail_Returns422()
+    {
+        var user = new User { Email = "not-an-email", Name = "Test", Role = "user" };
+        var response = await _client.PostAsJsonAsync("/api/users", user);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateUser_EmptyName_Returns422()
+    {
+        var user = new User { Email = "test@test.com", Name = "x", Role = "user" };
+        var response = await _client.PostAsJsonAsync("/api/users", user);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateUser_InvalidRole_Returns422()
+    {
+        var user = new User { Email = "role@test.com", Name = "Test", Role = "superadmin" };
+        var response = await _client.PostAsJsonAsync("/api/users", user);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateUser_InvalidEmail_Returns422()
+    {
+        var user = new User { Email = "valid@test.com", Name = "Valid", Role = "user" };
+        var created = await (await _client.PostAsJsonAsync("/api/users", user))
+            .Content.ReadFromJsonAsync<User>();
+        var updated = new User { Email = "not-an-email", Name = "Valid", Role = "user" };
+        var response = await _client.PatchAsJsonAsync($"/api/users/{created!.Id}", updated);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 }

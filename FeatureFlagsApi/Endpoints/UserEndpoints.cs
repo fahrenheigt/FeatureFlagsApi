@@ -18,6 +18,9 @@ public static class UserEndpoints
 
         app.MapPost("/api/users", (User user) =>
         {
+            var (isValid, errors) = ValidationHelper.Validate(user);
+            if (!isValid) return Results.UnprocessableEntity(errors);
+
             if (UserStore.Users.Any(u => u.Email == user.Email))
                 return Results.Conflict("Un utilisateur avec cet email existe déjà.");
 
@@ -30,6 +33,9 @@ public static class UserEndpoints
         {
             var user = UserStore.Users.FirstOrDefault(u => u.Id == id);
             if (user is null) return Results.NotFound();
+
+            var (isValid, errors) = ValidationHelper.Validate(updated);
+            if (!isValid) return Results.UnprocessableEntity(errors);
 
             user.Name = updated.Name ?? user.Name;
             user.Email = updated.Email ?? user.Email;

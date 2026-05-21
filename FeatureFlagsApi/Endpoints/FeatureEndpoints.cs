@@ -18,6 +18,9 @@ public static class FeatureEndpoints
 
         app.MapPost("/api/features", (Feature feature) =>
         {
+            var (isValid, errors) = ValidationHelper.Validate(feature);
+            if (!isValid) return Results.UnprocessableEntity(errors);
+
             if (FeatureStore.Features.Any(f => f.Key == feature.Key))
                 return Results.Conflict("Une feature avec cette clé existe déjà.");
 
@@ -29,6 +32,9 @@ public static class FeatureEndpoints
         {
             var feature = FeatureStore.Features.FirstOrDefault(f => f.Key == key);
             if (feature is null) return Results.NotFound();
+
+            var (isValid, errors) = ValidationHelper.Validate(updated);
+            if (!isValid) return Results.UnprocessableEntity(errors);
 
             feature.Name = updated.Name ?? feature.Name;
             feature.Description = updated.Description ?? feature.Description;
@@ -62,11 +68,13 @@ public static class FeatureEndpoints
             return Results.Ok(feature);
         });
 
-        // Config par environnement
         app.MapPut("/api/features/{key}/environments/{env}/config", (string key, string env, EnvironmentConfig config) =>
         {
             var feature = FeatureStore.Features.FirstOrDefault(f => f.Key == key);
             if (feature is null) return Results.NotFound();
+
+            var (isValid, errors) = ValidationHelper.Validate(config);
+            if (!isValid) return Results.UnprocessableEntity(errors);
 
             feature.Environments[env] = config;
             return Results.Ok(feature);
