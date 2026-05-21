@@ -25,6 +25,7 @@ public static class FeatureEndpoints
                 return Results.Conflict("Une feature avec cette clé existe déjà.");
 
             FeatureStore.Features.Add(feature);
+            AuditStore.Log("created", "feature", feature.Key);
             return Results.Created($"/api/features/{feature.Key}", feature);
         });
 
@@ -38,6 +39,7 @@ public static class FeatureEndpoints
 
             feature.Name = updated.Name ?? feature.Name;
             feature.Description = updated.Description ?? feature.Description;
+            AuditStore.Log("updated", "feature", key);
             return Results.Ok(feature);
         });
 
@@ -47,6 +49,7 @@ public static class FeatureEndpoints
             if (feature is null) return Results.NotFound();
 
             FeatureStore.Features.Remove(feature);
+            AuditStore.Log("deleted", "feature", key);
             return Results.NoContent();
         });
 
@@ -56,6 +59,7 @@ public static class FeatureEndpoints
             if (feature is null) return Results.NotFound();
 
             feature.Enabled = true;
+            AuditStore.Log("enabled", "feature", key);
             return Results.Ok(feature);
         });
 
@@ -65,6 +69,7 @@ public static class FeatureEndpoints
             if (feature is null) return Results.NotFound();
 
             feature.Enabled = false;
+            AuditStore.Log("disabled", "feature", key);
             return Results.Ok(feature);
         });
 
@@ -77,6 +82,7 @@ public static class FeatureEndpoints
             if (!isValid) return Results.UnprocessableEntity(errors);
 
             feature.Environments[env] = config;
+            AuditStore.Log("config-updated", "feature", key, $"env={env}");
             return Results.Ok(feature);
         });
 
@@ -100,6 +106,7 @@ public static class FeatureEndpoints
                 return Results.NotFound();
 
             feature.Environments.Remove(env);
+            AuditStore.Log("config-deleted", "feature", key, $"env={env}");
             return Results.NoContent();
         });
 
@@ -121,6 +128,14 @@ public static class FeatureEndpoints
 
             var result = FeatureService.EvaluateFeatureAccess(feature, config, user, userGroups);
             return Results.Ok(result);
+        });
+
+        app.MapGet("/api/features/{key}/audit-logs", (string key) =>
+        {
+            var logs = AuditStore.Logs
+                .Where(l => l.Resource == "feature" && l.ResourceKey == key)
+                .ToList();
+            return Results.Ok(logs);
         });
     }
 }

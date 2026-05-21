@@ -100,7 +100,7 @@ public class EvaluateTests : IClassFixture<WebApplicationFactory<Program>>
         await SetConfig("eval-group", "prod", new EnvironmentConfig
         {
             Enabled = true,
-            AllowedGroups = ["eval-beta-testers"]
+            AllowedGroups = ["eval-beta-testers"]  // ← même nom que le groupe créé
         });
 
         var response = await _client.GetAsync($"/api/features/eval-group/evaluate?userId={user.Id}&env=prod");

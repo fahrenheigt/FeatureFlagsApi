@@ -49,6 +49,7 @@ public static class GroupEndpoints
             if (group is null) return Results.NotFound();
 
             GroupStore.Groups.Remove(group);
+            AuditStore.Log("group-deleted", "group", group.Name, $"groupId={id}");
             return Results.NoContent();
         });
 
@@ -64,6 +65,7 @@ public static class GroupEndpoints
                 return Results.Conflict("L'utilisateur est déjà dans ce groupe.");
 
             group.UserIds.Add(userId);
+            AuditStore.Log("user-added", "group", group.Name, $"userId={userId}");
             return Results.Ok(group);
         });
 
@@ -76,6 +78,7 @@ public static class GroupEndpoints
                 return Results.NotFound("Utilisateur introuvable dans ce groupe.");
 
             group.UserIds.Remove(userId);
+            AuditStore.Log("user-removed", "group", group.Name, $"userId={userId}");
             return Results.NoContent();
         });
 

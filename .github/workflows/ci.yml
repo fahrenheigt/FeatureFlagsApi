@@ -67,7 +67,9 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_CONTAINER_NAME }}:${{ github.ref_name }} .
+          docker build \
+            --build-arg APP_VERSION=${{ github.ref_name }} \
+            -t ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_CONTAINER_NAME }}:${{ github.ref_name }} .
 
       - name: Push Docker image
         run: |
@@ -85,3 +87,28 @@ jobs:
         run: |
           sleep 30
           curl -f ${{ secrets.SCW_CONTAINER_URL }}/api/health
+
+  deploy-frontend:
+      name: Deploy Frontend to Scaleway
+      runs-on: ubuntu-24.04
+      needs: build
+      if: startsWith(github.ref, 'refs/tags/')
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Login to Scaleway Registry
+          run: |
+            docker login ${{ secrets.SCW_REGISTRY }} \
+              -u nologin \
+              --password-stdin <<< "${{ secrets.SCW_SECRET_KEY }}"
+
+        - name: Build Docker image
+          run: |
+            docker build \
+              --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
+              -t ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_FRONTEND_CONTAINER_NAME }}:${{ github.ref_name }} \
+              ./frontend
+
+        - name: Push Docker image
+          run: |
+            docker push ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_FRONTEND_CONTAINER_NAME }}:${{ github.ref_name }}
