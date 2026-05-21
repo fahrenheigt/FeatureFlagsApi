@@ -27,6 +27,7 @@ app.MapUserEndpoints();
 app.MapGroupEndpoints();
 app.MapEnvironmentEndpoints();
 app.MapFeatureEndpoints();
+app.MapAuditEndpoints();
 
 app.Run();
 
