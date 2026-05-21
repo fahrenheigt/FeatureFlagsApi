@@ -113,4 +113,39 @@ public class UserTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.GetAsync($"/api/users/{created!.Id}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task CreateUser_InvalidEmail_Returns422()
+    {
+        var user = new User { Email = "not-an-email", Name = "Test", Role = "user" };
+        var response = await _client.PostAsJsonAsync("/api/users", user);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateUser_EmptyName_Returns422()
+    {
+        var user = new User { Email = "test@test.com", Name = "x", Role = "user" };
+        var response = await _client.PostAsJsonAsync("/api/users", user);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateUser_InvalidRole_Returns422()
+    {
+        var user = new User { Email = "role@test.com", Name = "Test", Role = "superadmin" };
+        var response = await _client.PostAsJsonAsync("/api/users", user);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateUser_InvalidEmail_Returns422()
+    {
+        var user = new User { Email = "valid@test.com", Name = "Valid", Role = "user" };
+        var created = await (await _client.PostAsJsonAsync("/api/users", user))
+            .Content.ReadFromJsonAsync<User>();
+        var updated = new User { Email = "not-an-email", Name = "Valid", Role = "user" };
+        var response = await _client.PatchAsJsonAsync($"/api/users/{created!.Id}", updated);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
 }

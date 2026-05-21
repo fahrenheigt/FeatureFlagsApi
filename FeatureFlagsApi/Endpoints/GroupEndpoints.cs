@@ -2,8 +2,6 @@
 using FeatureFlagsApi.Services;
 using Group = FeatureFlagsApi.Models.Group;
 
-using System.Text.RegularExpressions;
-
 namespace FeatureFlagsApi.Endpoints;
 
 public static class GroupEndpoints
@@ -21,6 +19,9 @@ public static class GroupEndpoints
 
         app.MapPost("/api/groups", (Group group) =>
         {
+            var (isValid, errors) = ValidationHelper.Validate(group);
+            if (!isValid) return Results.UnprocessableEntity(errors);
+
             if (GroupStore.Groups.Any(g => g.Name == group.Name))
                 return Results.Conflict("Un groupe avec ce nom existe déjà.");
 
@@ -33,6 +34,9 @@ public static class GroupEndpoints
         {
             var group = GroupStore.Groups.FirstOrDefault(g => g.Id == id);
             if (group is null) return Results.NotFound();
+
+            var (isValid, errors) = ValidationHelper.Validate(updated);
+            if (!isValid) return Results.UnprocessableEntity(errors);
 
             group.Name = updated.Name ?? group.Name;
             group.Description = updated.Description ?? group.Description;

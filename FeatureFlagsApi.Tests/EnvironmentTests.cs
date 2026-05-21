@@ -108,4 +108,22 @@ public class EnvironmentTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.GetAsync("/api/environments/deleted-env");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task CreateEnvironment_InvalidName_Returns422()
+    {
+        var env = new FeatureEnvironment { Name = "Invalid Name!", Description = "Test" };
+        var response = await _client.PostAsJsonAsync("/api/environments", env);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateEnvironment_InvalidName_Returns422()
+    {
+        var env = new FeatureEnvironment { Name = "valid-env-422", Description = "Test" };
+        await _client.PostAsJsonAsync("/api/environments", env);
+        var updated = new FeatureEnvironment { Name = "Invalid Name!", Description = "Test" };
+        var response = await _client.PatchAsJsonAsync("/api/environments/valid-env-422", updated);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
 }

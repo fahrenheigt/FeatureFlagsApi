@@ -194,4 +194,23 @@ public class GroupTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.GetAsync("/api/groups/9999/users");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task CreateGroup_EmptyName_Returns422()
+    {
+        var group = new Group { Name = "x", Description = "Test" };
+        var response = await _client.PostAsJsonAsync("/api/groups", group);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateGroup_EmptyName_Returns422()
+    {
+        var group = new Group { Name = "valid-group-422", Description = "Test" };
+        var created = await (await _client.PostAsJsonAsync("/api/groups", group))
+            .Content.ReadFromJsonAsync<Group>();
+        var updated = new Group { Name = "x", Description = "Test" };
+        var response = await _client.PatchAsJsonAsync($"/api/groups/{created!.Id}", updated);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
 }

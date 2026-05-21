@@ -2,14 +2,11 @@
 
 namespace FeatureFlagsApi.Models;
 
-public class Group
+public class FeatureEnvironment
 {
-    public int Id { get; set; }
-
     [Required(ErrorMessage = "Le nom est obligatoire")]
-    [MinLength(2, ErrorMessage = "Le nom doit contenir au moins 2 caractères")]
+    [RegularExpression("^[a-z0-9-]+$", ErrorMessage = "Le nom ne peut contenir que des minuscules, chiffres et tirets")]
     public required string Name { get; set; }
 
     public string Description { get; set; } = string.Empty;
-    public List<int> UserIds { get; set; } = [];
 }

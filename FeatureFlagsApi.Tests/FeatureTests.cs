@@ -202,4 +202,32 @@ public class FeatureTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.DeleteAsync("/api/features/inexistant");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    [Fact]
+    public async Task CreateFeature_InvalidKey_Returns422()
+    {
+        var feature = new Feature { Key = "Invalid Key!", Name = "Test", Description = "Test" };
+        var response = await _client.PostAsJsonAsync("/api/features", feature);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateFeature_InvalidKey_Returns422()
+    {
+        var feature = new Feature { Key = "valid-feature-422", Name = "Test", Description = "Test" };
+        await _client.PostAsJsonAsync("/api/features", feature);
+        var updated = new Feature { Key = "Invalid Key!", Name = "Test", Description = "Test" };
+        var response = await _client.PatchAsJsonAsync("/api/features/valid-feature-422", updated);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetEnvironmentConfig_InvalidRollout_Returns422()
+    {
+        var feature = new Feature { Key = "rollout-422", Name = "Test", Description = "Test" };
+        await _client.PostAsJsonAsync("/api/features", feature);
+        var config = new EnvironmentConfig { Enabled = true, Rollout = 150 };
+        var response = await _client.PutAsJsonAsync("/api/features/rollout-422/environments/prod/config", config);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+    }
 }
