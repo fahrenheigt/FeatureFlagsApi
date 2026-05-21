@@ -39,6 +39,6 @@ public class HealthTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var response = await _client.GetAsync("/api/version");
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("1.0.0", content);
+        Assert.Contains("0.7.7", content);
     }
 }
