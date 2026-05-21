@@ -19,11 +19,8 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
+app.MapOpenApi();
+app.MapScalarApiReference();
 
 app.MapHealthEndpoints();
 app.MapUserEndpoints();
