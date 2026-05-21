@@ -12,6 +12,10 @@ jobs:
   build:
     name: Build, Lint & Test
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
     steps:
       - uses: actions/checkout@v4
 
