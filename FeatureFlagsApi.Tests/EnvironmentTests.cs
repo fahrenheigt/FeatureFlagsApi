@@ -126,4 +126,17 @@ public class EnvironmentTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.PatchAsJsonAsync("/api/environments/valid-env-422", updated);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateEnvironment_WithNullDescription_KeepsExistingValue()
+    {
+        var env = new FeatureEnvironment { Name = "keep-env", Description = "Original" };
+        await _client.PostAsJsonAsync("/api/environments", env);
+
+        var response = await _client.PatchAsJsonAsync("/api/environments/keep-env",
+            new { Name = "keep-env", Description = (string?)null });
+        var result = await response.Content.ReadFromJsonAsync<FeatureEnvironment>();
+
+        Assert.Equal("Original", result!.Description);
+    }
 }

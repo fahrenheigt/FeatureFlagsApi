@@ -37,9 +37,9 @@ public static class UserEndpoints
             var (isValid, errors) = ValidationHelper.Validate(updated);
             if (!isValid) return Results.UnprocessableEntity(errors);
 
-            user.Name = updated.Name ?? user.Name;
-            user.Email = updated.Email ?? user.Email;
-            user.Role = updated.Role ?? user.Role;
+            user.Name = updated.Name;
+            user.Email = updated.Email;
+            user.Role = updated.Role;
             return Results.Ok(user);
         });
 

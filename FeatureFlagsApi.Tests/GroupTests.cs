@@ -213,4 +213,18 @@ public class GroupTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.PatchAsJsonAsync($"/api/groups/{created!.Id}", updated);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateGroup_KeepsExistingDescription_WhenNotChanged()
+    {
+        var group = new Group { Name = "keep-desc-group", Description = "Original" };
+        var created = await (await _client.PostAsJsonAsync("/api/groups", group))
+            .Content.ReadFromJsonAsync<Group>();
+
+        var updated = new Group { Name = "keep-desc-group-updated", Description = "Original" };
+        var response = await _client.PatchAsJsonAsync($"/api/groups/{created!.Id}", updated);
+        var result = await response.Content.ReadFromJsonAsync<Group>();
+
+        Assert.Equal("Original", result!.Description);
+    }
 }

@@ -7,8 +7,13 @@
           <ExcludeByFile>
             **/Models/*.cs,
             **/Services/*Store.cs,
-            **/Program.cs
+            **/Program.cs,
+            **/*.Generated.cs
           </ExcludeByFile>
+          <Exclude>
+            [*]Microsoft.AspNetCore.OpenApi.*,
+            [*]System.Runtime.CompilerServices.*
+          </Exclude>
         </Configuration>
       </DataCollector>
     </DataCollectors>

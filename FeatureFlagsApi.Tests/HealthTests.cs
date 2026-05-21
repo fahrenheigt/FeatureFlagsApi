@@ -41,4 +41,13 @@ public class HealthTests : IClassFixture<WebApplicationFactory<Program>>
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("version", content);
     }
+
+    [Fact]
+    public async Task GetVersion_ReturnsDevWhenNoEnvVar()
+    {
+        Environment.SetEnvironmentVariable("APP_VERSION", null);
+        var response = await _client.GetAsync("/api/version");
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("version", content);
+    }
 }

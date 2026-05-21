@@ -112,14 +112,20 @@ public class EvaluateTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task Evaluate_UserInRollout_ReturnsTrue()
     {
-        await CreateFeature("eval-rollout");
+        var feature = new Feature { Key = "eval-rollout", Name = "Rollout Test", Description = "Test", Enabled = true };
+        await _client.PostAsJsonAsync("/api/features", feature);
+        await _client.PatchAsync("/api/features/eval-rollout/enable", null);
+
         var user = await CreateUser("eval-rollout@test.com", "Test");
         await SetConfig("eval-rollout", "prod", new EnvironmentConfig
         {
             Enabled = true,
             Rollout = 100
         });
+
         var response = await _client.GetAsync($"/api/features/eval-rollout/evaluate?userId={user.Id}&env=prod");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
         var result = await response.Content.ReadFromJsonAsync<EvaluationResult>();
         Assert.True(result!.Enabled);
     }
