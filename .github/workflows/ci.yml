@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build & Test
+    name: Build, Lint & Test
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -26,8 +26,26 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -c Release
 
+      - name: Lint
+        run: dotnet format --verify-no-changes --no-restore
+
       - name: Test
-        run: dotnet test --no-build -c Release
+        run: dotnet test --no-build -c Release --collect:"XPlat Code Coverage"
+
+      - name: Coverage report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: '**/coverage.cobertura.xml'
+          badge: true
+          format: markdown
+          output: both
+
+      - name: Add coverage to PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
 
   deploy:
     name: Deploy to Scaleway
@@ -50,7 +68,7 @@ jobs:
       - name: Push Docker image
         run: |
           docker push ${{ secrets.SCW_REGISTRY }}/${{ secrets.SCW_CONTAINER_NAME }}:${{ github.ref_name }}
-        
+
       - name: Deploy container on Scaleway
         run: |
           curl -s -X POST \
@@ -61,5 +79,5 @@ jobs:
 
       - name: Verify deployment
         run: |
-          sleep 10
+          sleep 30
           curl -f ${{ secrets.SCW_CONTAINER_URL }}/api/health
