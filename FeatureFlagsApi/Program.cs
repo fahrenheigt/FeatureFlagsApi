@@ -20,8 +20,8 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 
-app.MapOpenApi();
-app.MapScalarApiReference("docs");
+app.MapOpenApi("/api/openapi/{documentName}.json");
+app.MapScalarApiReference("/api/docs");
 
 app.MapHealthEndpoints();
 app.MapUserEndpoints();
