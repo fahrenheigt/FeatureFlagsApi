@@ -1,0 +1,15 @@
+# Git
+.git/
+.gitignore
+
+# CI
+.github/
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.vscode/
+*.env
+.env*
