@@ -4,6 +4,9 @@ namespace FeatureFlagsApi.Services;
 
 public static class AuditStore
 {
+    public const string ResourceFeature = "feature";
+    public const string ResourceGroup = "group";
+
     public static List<AuditLog> Logs { get; } = [];
     private static int _nextId = 1;
 

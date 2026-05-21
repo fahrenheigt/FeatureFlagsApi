@@ -39,7 +39,7 @@ public static class FeatureEndpoints
             return Results.Conflict("Une feature avec cette clé existe déjà.");
 
         FeatureStore.Features.Add(feature);
-        AuditStore.Log("created", "feature", feature.Key);
+        AuditStore.Log("created", AuditStore.ResourceFeature, feature.Key);
         return Results.Created($"/api/features/{feature.Key}", feature);
     }
 
@@ -53,7 +53,7 @@ public static class FeatureEndpoints
 
         feature.Name = updated.Name;
         feature.Description = updated.Description;
-        AuditStore.Log("updated", "feature", key);
+        AuditStore.Log("updated", AuditStore.ResourceFeature, key);
         return Results.Ok(feature);
     }
 
@@ -63,7 +63,7 @@ public static class FeatureEndpoints
         if (feature is null) return Results.NotFound();
 
         FeatureStore.Features.Remove(feature);
-        AuditStore.Log("deleted", "feature", key);
+        AuditStore.Log("deleted", AuditStore.ResourceFeature, key);
         return Results.NoContent();
     }
 
@@ -73,7 +73,7 @@ public static class FeatureEndpoints
         if (feature is null) return Results.NotFound();
 
         feature.Enabled = true;
-        AuditStore.Log("enabled", "feature", key);
+        AuditStore.Log("enabled", AuditStore.ResourceFeature, key);
         return Results.Ok(feature);
     }
 
@@ -83,7 +83,7 @@ public static class FeatureEndpoints
         if (feature is null) return Results.NotFound();
 
         feature.Enabled = false;
-        AuditStore.Log("disabled", "feature", key);
+        AuditStore.Log("disabled", AuditStore.ResourceFeature, key);
         return Results.Ok(feature);
     }
 
@@ -96,7 +96,7 @@ public static class FeatureEndpoints
         if (!isValid) return Results.UnprocessableEntity(errors);
 
         feature.Environments[env] = config;
-        AuditStore.Log("config-updated", "feature", key, $"env={env}");
+        AuditStore.Log("config-updated", AuditStore.ResourceFeature, key, $"env={env}");
         return Results.Ok(feature);
     }
 
@@ -120,7 +120,7 @@ public static class FeatureEndpoints
             return Results.NotFound();
 
         feature.Environments.Remove(env);
-        AuditStore.Log("config-deleted", "feature", key, $"env={env}");
+        AuditStore.Log("config-deleted", AuditStore.ResourceFeature, key, $"env={env}");
         return Results.NoContent();
     }
 
@@ -147,7 +147,7 @@ public static class FeatureEndpoints
     private static IResult GetAuditLogs(string key)
     {
         var logs = AuditStore.Logs
-            .Where(l => l.Resource == "feature" && l.ResourceKey == key)
+            .Where(l => l.Resource == AuditStore.ResourceFeature && l.ResourceKey == key)
             .ToList();
         return Results.Ok(logs);
     }
