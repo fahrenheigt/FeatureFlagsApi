@@ -49,7 +49,7 @@ public class UserTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task CreateUser_Duplicate_Returns409()
     {
-        var user = new User { Email = "bob@example.com", Name = "Bob", Role = "user" };
+        var user = new User { Email = $"duplicate-{Guid.NewGuid()}@example.com", Name = "Bob", Role = "user" };
         await _client.PostAsJsonAsync("/api/users", user);
         var response = await _client.PostAsJsonAsync("/api/users", user);
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
