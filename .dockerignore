@@ -1,0 +1,30 @@
+# Git
+.git/
+.gitignore
+
+# CI
+.github/
+
+# Tests
+FeatureFlagsApi.Tests/
+**/TestResults/
+coverage-report/
+
+# Frontend
+frontend/
+
+# Node
+**/node_modules/
+
+# Build artifacts
+**/bin/
+**/obj/
+
+# IDE
+.vs/
+*.user
+
+# Secrets et config locaux
+*.env
+.env*
+appsettings.Development.json
